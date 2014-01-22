@@ -4,8 +4,10 @@ require 'Slim/Slim.php';
 \Slim\Slim::registerAutoloader();
 
 $app = new \Slim\Slim();
+$app->add(new \CORSEnablerMiddleware());
+$app->add(new \LoggerMiddleware());
 
-$db = new SQLite3('..\SQLiteManager\SlimRest');
+$db = new SQLite3('SlimRestSeed.db');
 
 $app->get('/user/list/', function() use ($db) {
     $results = $db->query('SELECT * FROM User');
@@ -58,6 +60,17 @@ $app->put('/user/update/', function() use($app,$db) {
 
 $app->delete('/user/delete/:id', function ($id) use($db) {
     $db->exec("DELETE FROM User WHERE id=$id");
+});
+
+$app->options('/(:name+)', function() use($app) {
+    $response = $app->response();
+
+    $response->header('Access-Control-Allow-Origin', '*');
+    $response->header('Access-Control-Allow-Credentials', 'true');
+    $response->header('Access-Control-Allow-Headers', 'Content-Type, X-Requested-With, X-authentication, X-client, X-MICROTIME, X-HASH');
+    $response->header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+
+    $response->status(200);
 });
 
 $app->run();
