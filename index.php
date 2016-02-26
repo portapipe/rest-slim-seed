@@ -1,4 +1,15 @@
 <?php
+/* 
+	In caso di test in locale il browser potrebbe dare problemi riguardo l'origine e altri 'Access-Control-Allow' qualcosa.
+	Con le linee seguenti viene permesso l'accesso ad un IP (da modificare) e l'invio di una chiave di Autorizzazione tramite header
+	Togli i tag commento per utilizzarle!
+*/
+/*
+header('Access-Control-Allow-Origin: http://0.0.0.0:8100');
+header('Access-Control-Allow-Credentials: true');
+header('Access-Control-Allow-Methods: GET, POST, PUT, DELETE');
+header('Access-Control-Allow-Headers: Authorization');
+*/
 
 require 'Slim/Slim.php';
 \Slim\Slim::registerAutoloader();
@@ -7,9 +18,23 @@ $app = new \Slim\Slim();
 $app->add(new \CORSEnablerMiddleware());
 $app->add(new \LoggerMiddleware());
 
+//Usa authRequest($app) nelle route che vuoi proteggere con chiave di autorizzazione!
+function authRequest($app){
+	if(getallheaders()['Authorization']!="Basic 12345678987654321portapipe_wordpress_com"){
+	    $app->status(401);
+	    header("HTTP/1.1 401 Unauthorized");
+		echo json_encode(array("auth"=>"false"));
+		die();
+		return false;
+	}
+	return true;
+}
+
 $db = new SQLite3('SlimRestSeed.db');
 
-$app->get('/user/list/', function() use ($db) {
+$app->get('/user/list/', function() use ($app,$db) {
+	//Esempio utilizzo auth
+	//authRequest($app);
     $results = $db->query('SELECT * FROM User');
 
     $users = array();
